@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SimpleUpgrade", menuName = "Scriptable Objects/SimpleUpgrade")]
-public class SimpleUpgrade : ScriptableObject, Upgrade
+[CreateAssetMenu(fileName = "SimpleUpgradeDefinition", menuName = "Scriptable Objects/SimpleUpgradeDefinition")]
+public class SimpleUpgradeDefinition : ScriptableObject, Upgrade
 {
     /// <summary>
     /// NON-UNIQUE name of the upgrade to display to the player.
