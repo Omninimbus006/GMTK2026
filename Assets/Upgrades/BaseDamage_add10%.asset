@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BaseDamage_add10%
   m_EditorClassIdentifier: Assembly-CSharp::SimpleUpgrade
   <Modifiers>k__BackingField:
-  - <Modifier>k__BackingField: 1.1
+  - <Modifier>k__BackingField: 0.1
     <Stat>k__BackingField: 10
     <ModifierType>k__BackingField: 1
   <Name>k__BackingField: Base Damage

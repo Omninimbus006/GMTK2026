@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class UpgradesManager : MonoBehaviour, IUpgradable
 {
-    public List<Upgrade> Upgrades { get; private set; }
+    public List<Upgrade> Upgrades { get; } = new List<Upgrade>();
 
     /// <summary>
     /// Applies all upgrades for a given stat to the given number.
@@ -17,16 +17,7 @@ public class UpgradesManager : MonoBehaviour, IUpgradable
     {
         input += Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
         
-        input *= Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
-
-        try
-        {
-            input /= Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
-        }
-        catch (DivideByZeroException)
-        {
-            // Just ignore it lmao we don't care
-        }
+        input *= 1 + Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
 
         return input;
     }

@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerInput : MonoBehaviour
 {
-    public Vector2 Movement {get; private set; }
-    public Vector2 Look {get; private set; }
+    public Vector2 Movement { get; private set; }
+    public Vector2 Look { get; private set; }
 
     public event Action Jump;
     public event Action Crouch;
