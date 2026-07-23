@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
+using TMPro;
 
 public class OptionsMenu : MonoBehaviour
 {
@@ -11,6 +12,10 @@ public class OptionsMenu : MonoBehaviour
         public Slider musicSlider;
         public Slider sfxSlider;
 	public Slider fovSlider;
+	public Slider sensitivitySlider;
+
+	public TMP_Text fovText;
+	public TMP_Text sensitivityText;
 
 	
 	void Start()
@@ -20,17 +25,23 @@ public class OptionsMenu : MonoBehaviour
                 float savedMusic = PlayerPrefs.GetFloat("Music", 0f);
                 float savedSFX = PlayerPrefs.GetFloat("SFX", 0f);
 		float savedFOV = PlayerPrefs.GetInt("FOV", 40);
+		float savedSensitivity = PlayerPrefs.GetFloat("Sensitivity", 1);
+
 
 		//Set slider positions to saved value
 		if(masterSlider != null) masterSlider.value = savedMaster;
                 if(musicSlider != null) musicSlider.value = savedMusic;
                 if(sfxSlider != null) sfxSlider.value = savedSFX;
 		if(fovSlider != null) fovSlider.value = savedFOV;
+		if(sensitivitySlider != null) sensitivitySlider.value = savedSensitivity;
+
 
 		//Set values
 		SetMaster(savedMaster);
                 SetMusic(savedMusic);
                 SetSFX(savedSFX);
+		SetFOV(savedFOV);
+		SetSensitivity(savedSensitivity);
 	}
 
 	public void SetMaster(float volume)
@@ -58,5 +69,16 @@ public class OptionsMenu : MonoBehaviour
 	{
 		PlayerPrefs.SetInt("FOV", (int)FOV);
 		PlayerPrefs.Save();
+		
+		//Display FOV in text above slider
+		fovText.text = "FOV: " + FOV.ToString();
+	}
+	
+	public void SetSensitivity(float sensitivity)
+	{
+		PlayerPrefs.SetFloat("Sensitivity", sensitivity);
+		PlayerPrefs.Save();
+
+		sensitivityText.text = "SENSITIVITY: " + sensitivity.ToString("F1");
 	}
 }
