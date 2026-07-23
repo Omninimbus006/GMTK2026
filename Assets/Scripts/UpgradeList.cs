@@ -10,24 +10,23 @@ public class UpgradeList : MonoBehaviour
 
     public void OpenMenu(List<Upgrade> upgrades)
     {
-        string[] upgrade = new string[];
-        string text = "";
+        List<string> upgradeStrings = new List<string>();
 
-        for(int i = 0; i < upgrades.Count; i++)
+        for (int i = 0; i < upgrades.Count; i++)
         {
-            
+            string text = "";
+
             Upgrade upgradeData = upgrades[i];
 
             foreach (StatModifier mod in upgradeData.Modifiers)
             {
-                //Add modifier type to string to be printed
+                // Add modifier type
                 text += mod.Stat + " ";
 
-                //If modifier is flat, print +/- amount
-                if(mod.ModifierType == ModifierType.Flat)
+                // Flat modifier
+                if (mod.ModifierType == ModifierType.Flat)
                 {
-                    //Check if modifier is positive or negative to print + or -
-                    if(mod.Modifier > 0)
+                    if (mod.Modifier > 0)
                     {
                         text += "+" + mod.Modifier;
                     }
@@ -36,32 +35,34 @@ public class UpgradeList : MonoBehaviour
                         text += mod.Modifier;
                     }
                 }
-                //If modifier type is multiplication, print + or - %
+                // Percentage modifier
                 else
                 {
-                    //Check if modifier is positive or negative to print + or -
-                    if(mod.Modifier > 0)
+                    if (mod.Modifier > 0)
                     {
-                        text += "+" + mod.Modifier*100 + "%";
+                        text += "+" + (mod.Modifier * 100) + "%";
                     }
                     else
                     {
-                        text += "-" + mod.Modifier*100 + "%";
+                        text += (mod.Modifier * 100) + "%";
                     }
                 }
 
-                //Add comma space for next modifier
+                // Separator between modifiers
                 text += ", ";
-                
             }
 
-            //remove last comma and space and add newline
-            text = text.Remove(text.Length - 2);
-            text += "\n";
-            //add [i] upgrade to list
-            upgrade[i] = text;
+            // Remove the last ", " if there were modifiers
+            if (upgradeData.Modifiers.Count > 0)
+            {
+                text = text.Remove(text.Length - 2);
+            }
+
+            // Add this upgrade to the list
+            upgradeStrings.Add(text);
         }
-        
-        upgradeList.text = upgrade;
+
+        // Display all upgrades with a newline between each one
+        upgradeList.text = string.Join("\n", upgradeStrings);
     }
 }
