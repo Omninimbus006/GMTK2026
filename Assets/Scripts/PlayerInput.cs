@@ -9,11 +9,17 @@ public class PlayerInput : MonoBehaviour
 
     public event Action Jump;
     public event Action Crouch;
+    public event Action CrouchRelease;
+
+    public event Action Sprint;
+    public event Action SprintRelease;
     
     public event Action Interact;
     
     public event Action PrimaryFire;
+    public event Action PrimaryFireRelease;
     public event Action SecondaryFire;
+    public event Action SecondaryFireRelease;
 
     public event Action OffensiveAbilityActivate;
     public event Action DefensiveAbilityActivate;
@@ -29,9 +35,14 @@ public class PlayerInput : MonoBehaviour
         look = InputSystem.actions.FindAction("Look");
         InputSystem.actions.FindAction("Jump").started += OnJumpPressed;
         InputSystem.actions.FindAction("Crouch").started += OnCrouchPressed;
+        InputSystem.actions.FindAction("Crouch").canceled += OnCrouchReleased;
+        InputSystem.actions.FindAction("Sprint").started += OnSprintPressed;
+        InputSystem.actions.FindAction("Sprint").canceled += OnSprintReleased;
         InputSystem.actions.FindAction("Interact").started += OnInteractPressed;
         InputSystem.actions.FindAction("Primary Fire").started += OnPrimaryFirePressed;
+        InputSystem.actions.FindAction("Primary Fire").canceled += OnPrimaryFireReleased;
         InputSystem.actions.FindAction("Secondary Fire").started += OnSecondaryFirePressed;
+        InputSystem.actions.FindAction("Secondary Fire").canceled += OnSecondaryFireReleased;
         InputSystem.actions.FindAction("Offensive Ability").started += OnOffensiveAbilityPressed;
         InputSystem.actions.FindAction("Defensive Ability").started += OnDefensiveAbilityPressed;
         InputSystem.actions.FindAction("Utility Ability").started += OnUtilityAbilityPressed;
@@ -54,6 +65,11 @@ public class PlayerInput : MonoBehaviour
         Crouch?.Invoke();
     }
 
+    private void OnCrouchReleased(InputAction.CallbackContext context)
+    {
+        CrouchRelease?.Invoke();
+    }
+
     private void OnInteractPressed(InputAction.CallbackContext context)
     {
         Interact?.Invoke();
@@ -64,11 +80,31 @@ public class PlayerInput : MonoBehaviour
         PrimaryFire?.Invoke();
     }
 
+    private void OnPrimaryFireReleased(InputAction.CallbackContext context)
+    {
+        PrimaryFireRelease?.Invoke();
+    }
+    
     private void OnSecondaryFirePressed(InputAction.CallbackContext context)
     {
         SecondaryFire?.Invoke();
     }
 
+    private void OnSecondaryFireReleased(InputAction.CallbackContext context)
+    {
+        SecondaryFireRelease?.Invoke();
+    }
+
+    private void OnSprintPressed(InputAction.CallbackContext context)
+    {
+        Sprint?.Invoke();
+    }
+
+    private void OnSprintReleased(InputAction.CallbackContext context)
+    {
+        SprintRelease?.Invoke();
+    }
+    
     private void OnOffensiveAbilityPressed(InputAction.CallbackContext context)
     {
         OffensiveAbilityActivate?.Invoke();
