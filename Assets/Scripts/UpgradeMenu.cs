@@ -15,19 +15,6 @@ public class UpgradeMenu : MonoBehaviour
     private List<Upgrade> storedUpgrades;
     private Action<Upgrade> callback;
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void OpenMenu(List<Upgrade> upgrades, Action<Upgrade> callback)
     {
         storedUpgrades = upgrades;
