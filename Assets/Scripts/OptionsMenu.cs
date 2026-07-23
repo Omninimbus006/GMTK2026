@@ -22,16 +22,16 @@ public class OptionsMenu : MonoBehaviour
 	{
 		//Fetch saved values
 		float savedMaster = PlayerPrefs.GetFloat("Master", -2f);
-                float savedMusic = PlayerPrefs.GetFloat("Music", 0f);
-                float savedSFX = PlayerPrefs.GetFloat("SFX", 0f);
+        float savedMusic = PlayerPrefs.GetFloat("Music", 0f);
+        float savedSFX = PlayerPrefs.GetFloat("SFX", 0f);
 		float savedFOV = PlayerPrefs.GetInt("FOV", 40);
 		float savedSensitivity = PlayerPrefs.GetFloat("Sensitivity", 1);
 
 
 		//Set slider positions to saved value
 		if(masterSlider != null) masterSlider.value = savedMaster;
-                if(musicSlider != null) musicSlider.value = savedMusic;
-                if(sfxSlider != null) sfxSlider.value = savedSFX;
+        if(musicSlider != null) musicSlider.value = savedMusic;
+        if(sfxSlider != null) sfxSlider.value = savedSFX;
 		if(fovSlider != null) fovSlider.value = savedFOV;
 		if(sensitivitySlider != null) sensitivitySlider.value = savedSensitivity;
 
