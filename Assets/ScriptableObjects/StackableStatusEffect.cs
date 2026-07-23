@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "StackableStatusEffect", menuName = "Scriptable Objects/StackableStatusEffect")]
@@ -51,29 +52,14 @@ public class StackableStatusEffectDefinition : ScriptableObject
     [field:SerializeField]
     public OverflowStackAction OverflowAction { get; set; }
     
-    /// <summary>
-    /// The amount to modify the stat by.
-    /// </summary>
     [field:SerializeField]
-    public float Modifier { get; set; }
-    
-    /// <summary>
-    /// Which stat to modify.
-    /// </summary>
-    [field:SerializeField]
-    public Stat Stat { get; set; }
-    
-    /// <summary>
-    /// What operation (addition/subtraction, multiplication, division) to use.
-    /// </summary>
-    [field:SerializeField]
-    public ModifierType ModifierType { get; set; }
+    public List<StatModifier> Modifiers { get; set; }
 
     public StackableStatusEffect StackableStatusEffect
     {
         get
         {
-            return new StackableStatusEffect(Name, Duration, Stacks, MaxStacks, Modifier, Stat, ModifierType, ExpireAction, OverflowAction, DisableWhenPaused);
+            return new StackableStatusEffect(Name, Duration, Stacks, MaxStacks, Modifiers, ExpireAction, OverflowAction, DisableWhenPaused);
         }
     }
 }

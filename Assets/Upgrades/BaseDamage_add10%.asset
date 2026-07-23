@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80174e00bc147eafab53499ef0f8ef51, type: 3}
   m_Name: BaseDamage_add10%
   m_EditorClassIdentifier: Assembly-CSharp::SimpleUpgrade
+  <Modifiers>k__BackingField:
+  - <Modifier>k__BackingField: 1.1
+    <Stat>k__BackingField: 10
+    <ModifierType>k__BackingField: 1
   <Name>k__BackingField: Base Damage
-  <Modifier>k__BackingField: 1.1
-  <Stat>k__BackingField: 10
-  <ModifierType>k__BackingField: 1
+  <IsSingleton>k__BackingField: 0
+  <Rarity>k__BackingField: 2

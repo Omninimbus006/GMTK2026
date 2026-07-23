@@ -15,11 +15,20 @@ public class UpgradesManager : MonoBehaviour, IUpgradable
     /// <returns>The modified stat.</returns>
     public float ApplyModifiers(float input, Stat stat)
     {
-        input += Upgrades.Where(upgrade => upgrade.Stat == stat && upgrade.ModifierType == ModifierType.Flat).Sum(upgrade => upgrade.Modifier);
+        input += Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
+        
+        input *= Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
 
-        input = Upgrades.Where(upgrade => upgrade.Stat == stat && upgrade.ModifierType == ModifierType.Multiply).Aggregate(input, (current, upgrade) => current * upgrade.Modifier);
+        try
+        {
+            input /= Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
+        }
+        catch (DivideByZeroException)
+        {
+            // Just ignore it lmao we don't care
+        }
 
-        return Upgrades.Where(upgrade => upgrade.Stat == stat && upgrade.ModifierType == ModifierType.Divide).Aggregate(input, (current, upgrade) => current / upgrade.Modifier);
+        return input;
     }
 
     /// <summary>
@@ -30,9 +39,14 @@ public class UpgradesManager : MonoBehaviour, IUpgradable
     /// <returns>The requested modifier.</returns>
     public float GetModifier(Stat stat, ModifierType modifierType)
     {
-        return Upgrades.Where(upgrade => upgrade.Stat == stat && upgrade.ModifierType == modifierType).Sum(upgrade => upgrade.Modifier);
+        return Upgrades.Sum(upgrade => upgrade.Modifiers.Where(modifier => modifier.Stat == stat &&  modifier.ModifierType == modifierType).Sum(modifier => modifier.Modifier));
     }
 
+    /// <summary>
+    /// Tries to add an upgrade.
+    /// </summary>
+    /// <param name="upgrade">The upgrade to add.</param>
+    /// <returns>True if the upgrade was added. False if the upgrade was singleton and an instance was already present.</returns>
     public bool TryAddUpgrade(Upgrade upgrade)
     {
         if (upgrade.IsSingleton)
@@ -50,6 +64,11 @@ public class UpgradesManager : MonoBehaviour, IUpgradable
         return true;
     }
 
+    /// <summary>
+    /// Tries to remove an upgrade.
+    /// </summary>
+    /// <param name="upgrade">The upgrade to remove.</param>
+    /// <returns>True if the upgrade was removed. False if the upgrade was not found.</returns>
     public bool TryRemoveUpgrade(Upgrade upgrade)
     {
         return Upgrades.Remove(upgrade);

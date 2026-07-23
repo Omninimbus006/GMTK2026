@@ -9,6 +9,7 @@ public class Types
     
 }
 
+[Serializable]
 public enum Stat
 {
     Health,
@@ -28,6 +29,7 @@ public enum Stat
     UtilityAbilityScaling,
 }
 
+[Serializable]
 public enum ModifierType
 {
     Flat,
@@ -35,6 +37,7 @@ public enum ModifierType
     Divide
 }
 
+[Serializable]
 public enum Rarity
 {
     Common,
@@ -44,7 +47,7 @@ public enum Rarity
     Legendary,
 }
 
-public interface ICollectible
+public interface Collectible
 {
     /// <summary>
     /// The rarity of the upgrade, determines chance to drop. 
@@ -75,27 +78,36 @@ public interface IUpgradable
 }
 
 // Interface to allow modular use of upgrades
-public interface Upgrade : ICollectible
+public interface Upgrade : Collectible
 {
-    /// <summary>
-    /// The amount to modify the stat by.
-    /// </summary>
-    public float Modifier { get; }
-    
-    /// <summary>
-    /// Which stat to modify.
-    /// </summary>
-    public Stat Stat { get; }
-    
-    /// <summary>
-    /// What operation (addition/subtraction, multiplication, division) to use.
-    /// </summary>
-    public ModifierType ModifierType { get; }
+    public List<StatModifier> Modifiers { get; }
     
     /// <summary>
     /// Only allow one instance of this upgrade per object.
     /// </summary>
     public bool IsSingleton { get; }
+}
+
+[Serializable]
+public class StatModifier
+{
+    /// <summary>
+    /// The amount to modify the stat by.
+    /// </summary>
+    [field:SerializeField]
+    public float Modifier { get; set; }
+    
+    /// <summary>
+    /// Which stat to modify.
+    /// </summary>
+    [field:SerializeField]
+    public Stat Stat { get; set; }
+    
+    /// <summary>
+    /// What operation (addition/subtraction, multiplication, division) to use.
+    /// </summary>
+    [field:SerializeField]
+    public ModifierType ModifierType { get; set; }
 }
 
 
@@ -203,6 +215,7 @@ public class Status
     }
 }
 
+[Serializable]
 public enum ExpireStackAction
 {
     Add,
@@ -210,6 +223,7 @@ public enum ExpireStackAction
     Expire
 }
 
+[Serializable]
 public enum OverflowStackAction
 {
     Add,
@@ -347,52 +361,64 @@ public class StackableStatus : Status
     }
 }
 
-public class StatusEffect : Status
+public interface Effect
 {
-    /// <summary>
-    /// The amount to modify the stat by.
-    /// </summary>
-    public float Modifier { get; }
+    public List<StatModifier> Modifiers { get; }
+}
+
+public class StatusEffect : Status, Effect
+{
+    public List<StatModifier> Modifiers { get; }
     
-    /// <summary>
-    /// Which stat to modify.
-    /// </summary>
-    public Stat Stat { get; }
-    
-    /// <summary>
-    /// What operation (addition/subtraction, multiplication, division) to use.
-    /// </summary>
-    public ModifierType ModifierType { get; }
-    
-    public StatusEffect(string name, float duration, float modifier, Stat stat, ModifierType modifierType, bool disableWhenPaused = true) : base(name, duration, disableWhenPaused)
+    public StatusEffect(string name, float duration, List<StatModifier> modifiers, bool disableWhenPaused = true) : base(name, duration, disableWhenPaused)
     {
-        Modifier = modifier;
-        Stat = stat;
-        ModifierType = modifierType;
+        Modifiers = modifiers;
     }
 }
 
-public class StackableStatusEffect : StackableStatus
+public class StackableStatusEffect : StackableStatus, Effect
+{
+    public List<StatModifier> Modifiers { get; }
+    
+    public StackableStatusEffect(string name, float duration, int stacks, int maxStacks, List<StatModifier> modifiers, ExpireStackAction expireAction, OverflowStackAction overflowAction, bool disableWhenPaused = true) : base(name, duration, stacks, maxStacks, expireAction, overflowAction, disableWhenPaused)
+    {
+        Modifiers = modifiers;
+    }
+}
+
+public interface IStatusEffectable
 {
     /// <summary>
-    /// The amount to modify the stat by.
+    /// The list of statuses on the object.
     /// </summary>
-    public float Modifier { get; }
+    public List<Status> Statuses { get; }
+
+    /// <summary>
+    /// Adds a status to the object.
+    /// </summary>
+    /// <param name="status">The status to add.</param>
+    public void AddStatus(Status status);
     
     /// <summary>
-    /// Which stat to modify.
+    /// Tries to remove a status from the object.
     /// </summary>
-    public Stat Stat { get; }
+    /// <param name="status">The status to remove.</param>
+    /// <returns>True if the status was removed. False if the status was not found.</returns>
+    public bool TryRemoveStatus(Status status);
+}
+
+public interface IDamageable
+{
+    public float Health { get; }
+    public float MaxHealth { get; }
     
-    /// <summary>
-    /// What operation (addition/subtraction, multiplication, division) to use.
-    /// </summary>
-    public ModifierType ModifierType { get; }
+    public bool IsInvulnerable { get; }
+
+    public void Damage(float amount);
     
-    public StackableStatusEffect(string name, float duration, int stacks, int maxStacks, float modifier, Stat stat, ModifierType modifierType, ExpireStackAction expireAction, OverflowStackAction overflowAction, bool disableWhenPaused = true) : base(name, duration, stacks, maxStacks, expireAction, overflowAction, disableWhenPaused)
-    {
-        Modifier = modifier;
-        Stat = stat;
-        ModifierType = modifierType;
-    }
+    public void Heal(float amount);
+
+    public void Kill();
+    
+    public void SetInvulnerable(bool invulnerable);
 }

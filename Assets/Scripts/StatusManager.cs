@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public class StatusManager : MonoBehaviour
+public class StatusManager : MonoBehaviour, IStatusEffectable
 {
-    public readonly List<Status> Statuses = new List<Status>();
+    public List<Status> Statuses { get; } = new List<Status>();
     
     private void Update()
     {
         for (int i = 0; i < Statuses.Count; i++)
         {
-            Status status = null;
+            Status status;
             try
             {
                 status = Statuses[i];
@@ -46,5 +47,28 @@ public class StatusManager : MonoBehaviour
     public bool TryRemoveStatus(Status status)
     {
         return Statuses.Remove(status);
+    }
+
+    public float ApplyModifiers(float input, Stat stat)
+    {
+        input += Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
+        
+        input *= Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Multiply).Sum(modifier => modifier.Modifier));
+
+        try
+        {
+            input /= Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Divide).Sum(modifier => modifier.Modifier));
+        }
+        catch (DivideByZeroException)
+        {
+            // Just ignore it lmao we don't care
+        }
+        
+        return input;
+    }
+
+    public float GetModifiers(Stat stat, ModifierType modifierType)
+    {
+        return Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifierType == modifier.ModifierType).Sum(modifier => modifier.Modifier));
     }
 }

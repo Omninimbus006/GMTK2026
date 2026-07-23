@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2d927e3a0b1464196e1bcc07e3307e, type: 3}
   m_Name: Slowness
   m_EditorClassIdentifier: Assembly-CSharp::StatusEffectDefinition
-  <Name>k__BackingField: 
-  <Active>k__BackingField: 0
-  <DisableWhenPaused>k__BackingField: 0
-  <Duration>k__BackingField: 0
-  <Modifier>k__BackingField: 0
-  <Stat>k__BackingField: 0
-  <ModifierType>k__BackingField: 0
+  <Name>k__BackingField: Slow
+  <DisableWhenPaused>k__BackingField: 1
+  <Duration>k__BackingField: 10
+  <Modifiers>k__BackingField:
+  - <Modifier>k__BackingField: 0.65
+    <Stat>k__BackingField: 2
+    <ModifierType>k__BackingField: 1
