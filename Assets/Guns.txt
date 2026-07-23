@@ -1,0 +1,19 @@
+#Gun name (Pistol:)
+#Spam click speed in BPM. 0 = shoot on click
+#hold shoot speed in BPM
+#Mag size. 0 = unlimited
+#Reload speed in ms. 0 = animation length
+#Ammo type used (9mm, .556, 10 Gauge, .50 cal)
+
+Pistol:
+	0
+	300
+	15
+	0
+	9mm
+Shotgun:
+	80
+	80
+	8
+	0
+	10 Gauge
