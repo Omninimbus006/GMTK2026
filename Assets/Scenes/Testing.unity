@@ -448,6 +448,7 @@ GameObject:
   - component: {fileID: 330585549}
   - component: {fileID: 330585548}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585550}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -640,6 +641,19 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
+--- !u!114 &330585550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e38fa13967567728924212ce1c9bd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  cinemachineCamera: {fileID: 330585549}
 --- !u!1 &347173216
 GameObject:
   m_ObjectHideFlags: 0
@@ -860,7 +874,6 @@ GameObject:
   - component: {fileID: 756583647}
   - component: {fileID: 756583648}
   - component: {fileID: 756583649}
-  - component: {fileID: 756583650}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -921,10 +934,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7386d950393656013a8207b161853517, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  maxSpeed: 8
+  maxSpeed: 1
   sprintMultiplier: 2
-  acceleration: 3
   jumpForce: 5
+  acceleration: 1
   head: {fileID: 347173217}
 --- !u!114 &756583645
 MonoBehaviour:
@@ -1033,31 +1046,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 1
---- !u!143 &756583650
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 756583640}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 2
-  m_Radius: 0.5
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

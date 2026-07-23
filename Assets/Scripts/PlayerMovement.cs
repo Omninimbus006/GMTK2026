@@ -5,13 +5,13 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(StatsManager))]
 [RequireComponent(typeof(PlayerInput))]
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class PlayerMovement : MonoBehaviour
 {
     private StatsManager stats;
     private Rigidbody rb;
     private PlayerInput input;
-    private CharacterController controller;
+    private CapsuleCollider col;
 
     private float sensitivity;
 
@@ -20,16 +20,18 @@ public class PlayerMovement : MonoBehaviour
     
     [SerializeField]
     private float sprintMultiplier = 1.75f;
-    
-    [SerializeField]
-    private float acceleration = 5f;
 
     [SerializeField]
     private float jumpForce = 5f;
     
+    [SerializeField]
+    private float acceleration = 3f;
+    
     public Transform head;
     
     public bool Sprinting { get; private set; }
+    
+    public bool Grounded { get; private set; }
 
     private int jumpsRemaining;
     
@@ -42,7 +44,7 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         stats = GetComponent<StatsManager>();
         input = GetComponent<PlayerInput>();
-        controller = GetComponent<CharacterController>();
+        col = GetComponent<CapsuleCollider>();
         input.Jump += OnJump;
         input.Sprint += OnSprint;
         input.Sprint += OnSprintRelease;
@@ -58,18 +60,39 @@ public class PlayerMovement : MonoBehaviour
     {
         // Handle horizontal movement
         float speed = stats.GetStat(Stat.Speed);
-        Vector3 move = input.Movement;
-        move.z = move.y;
-        move.y = 0f;
-        move = transform.TransformDirection(move);
-        float baseMaxSpeed = speed * maxSpeed;
+        Vector3 wishDir = rb.transform.TransformDirection(new Vector3(input.Movement.x, 0, input.Movement.y));
+        Vector3 velocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.y);
+        
+        float baseMaxSpeed = maxSpeed * speed;
         if (Sprinting)
         {
             baseMaxSpeed *= sprintMultiplier;
         }
-        move = Vector3.ClampMagnitude(move, baseMaxSpeed) * (speed * Time.deltaTime);
         
-        controller.Move(move);
+        wishDir = wishDir.normalized;
+        Vector3 direction = wishDir * baseMaxSpeed - velocity;
+        float newAcceleration = acceleration;
+        newAcceleration *= direction.magnitude * 2f;
+        
+        direction = direction.normalized * (wishDir == Vector3.zero ? newAcceleration * 2 : newAcceleration);
+        float magn = direction.magnitude;
+        direction = direction.normalized;
+        direction *= magn;
+        
+        rb.AddForce(direction, ForceMode.Acceleration);
+        
+        if (!Grounded)
+        {
+            Grounded = Physics.CheckSphere(transform.position + Vector3.down * 0.5f, 0.3f, LayerMask.GetMask("Ground"));
+            if (Grounded)
+            {
+                jumpsRemaining = (int)stats.GetStat(Stat.Jumps);
+            }
+        }
+        else
+        {
+            Grounded = Physics.CheckSphere(transform.position + Vector3.down * 0.5f, 0.3f, LayerMask.GetMask("Ground"));
+        }
         
         // Handle look movement
         Vector2 look = input.Look * sensitivity;
@@ -81,12 +104,18 @@ public class PlayerMovement : MonoBehaviour
         head.localEulerAngles = eulerAngles;
     }
 
+    private void FixedUpdate()
+    {
+        col.height = Crouching ? Mathf.Max(0.6f, col.height - Time.fixedDeltaTime * 10f) : Mathf.Min(1.54f, col.height + Time.fixedDeltaTime * 10f);
+    }
+    
     public void OnJump()
     {
-        if (controller.isGrounded)
+        if (Grounded)
         {
             Crouching = false;
-
+            jumpsRemaining--;
+            
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
         else if (jumpsRemaining > 0)
@@ -98,7 +127,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnCrouch()
     {
-        if (controller.isGrounded && !Crouching)
+        if (Grounded && !Crouching)
         {
             Crouching = true;
         }
