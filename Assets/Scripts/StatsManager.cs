@@ -36,12 +36,12 @@ public class StatsManager : MonoBehaviour
     {
         float statValue = BaseStats[stat];
 
-        if (upgradesManager != null)
+        if (upgradesManager)
         {
             statValue = upgradesManager.ApplyModifiers(statValue, stat);
         }
 
-        if (statusManager != null)
+        if (statusManager)
         {
             statValue = statusManager.ApplyModifiers(statValue, stat);
         }

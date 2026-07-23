@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Health_add8%
   m_EditorClassIdentifier: Assembly-CSharp::SimpleUpgrade
   <Modifiers>k__BackingField:
-  - <Modifier>k__BackingField: 1.08
+  - <Modifier>k__BackingField: 0.08
     <Stat>k__BackingField: 0
     <ModifierType>k__BackingField: 1
   <Name>k__BackingField: Health

@@ -33,8 +33,7 @@ public enum Stat
 public enum ModifierType
 {
     Flat,
-    Multiply,
-    Divide
+    Multiply
 }
 
 [Serializable]
@@ -86,6 +85,21 @@ public interface Upgrade : Collectible
     /// Only allow one instance of this upgrade per object.
     /// </summary>
     public bool IsSingleton { get; }
+}
+
+public interface Weapon : Collectible
+{
+    public WeaponControl WeaponControl { get; }
+    
+    public float BaseDamage { get; }
+    
+    public float BaseReloadTime { get; }
+
+    public void OnPrimaryFire();
+    
+    public void OnSecondaryFire();
+
+    public void OnReload();
 }
 
 [Serializable]

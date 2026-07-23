@@ -53,16 +53,7 @@ public class StatusManager : MonoBehaviour, IStatusEffectable
     {
         input += Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Flat).Sum(modifier => modifier.Modifier));
         
-        input *= Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Multiply).Sum(modifier => modifier.Modifier));
-
-        try
-        {
-            input /= Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Divide).Sum(modifier => modifier.Modifier));
-        }
-        catch (DivideByZeroException)
-        {
-            // Just ignore it lmao we don't care
-        }
+        input *= 1 + Statuses.Where(status => status is Effect).Sum(status => ((Effect)status).Modifiers.Where(modifier => modifier.Stat == stat && modifier.ModifierType == ModifierType.Multiply).Sum(modifier => modifier.Modifier));
         
         return input;
     }
