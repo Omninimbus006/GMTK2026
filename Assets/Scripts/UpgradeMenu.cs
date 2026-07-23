@@ -78,8 +78,10 @@ public class UpgradeMenu : MonoBehaviour
         upgrade4.text = upgrade[3];
     }
 
+    //Each button will return a different value for upgrade when pressed. Callback with that value
     public void upgradeButtonPressed(int upgrade)
     {
-        callback?.Invoke(storedUpgrades[upgrade]);
+        if(upgrade != null && upgrade <= 3 && upgrade >= 0) callback?.Invoke(storedUpgrades[upgrade]);
+        else Debug.LogError("Something really messed up with the buttons");
     }
 }
