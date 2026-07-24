@@ -1,20 +1,39 @@
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(StatsManager))]
 [RequireComponent(typeof(PlayerInput))]
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
     private StatsManager stats;
     private Rigidbody rb;
     private PlayerInput input;
+    private CharacterController controller;
 
     private float sensitivity;
+
+    [SerializeField]
+    private float maxSpeed = 3f;
+    
+    [SerializeField]
+    private float sprintMultiplier = 1.75f;
+    
+    [SerializeField]
+    private float acceleration = 5f;
+
+    [SerializeField]
+    private float jumpForce = 5f;
     
     public Transform head;
     
-    public bool Grounded { get; private set; }
+    public bool Sprinting { get; private set; }
+
+    private int jumpsRemaining;
+    
+    public bool Crouching { get; private set; }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -23,35 +42,84 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         stats = GetComponent<StatsManager>();
         input = GetComponent<PlayerInput>();
+        controller = GetComponent<CharacterController>();
+        input.Jump += OnJump;
+        input.Sprint += OnSprint;
+        input.Sprint += OnSprintRelease;
+        input.Crouch += OnCrouch;
+        input.CrouchRelease += OnUncrouch;
         head.GetComponentInChildren<Camera>().fieldOfView = PlayerPrefs.GetFloat("FOV", 40f);
         sensitivity = PlayerPrefs.GetFloat("Sensitivity", 1f);
+        jumpsRemaining = (int)stats.GetStat(Stat.Jumps);
     }
 
     // Update is called once per frame
     private void Update()
     {
         // Handle horizontal movement
-        Vector3 horizontalForce = input.Movement;
-        horizontalForce.z = horizontalForce.y;
-        horizontalForce.y = 0;
-        horizontalForce = Vector3.ClampMagnitude(horizontalForce, 1f);
-        Vector3 horizontalVelocity = rb.linearVelocity;
-        horizontalVelocity.z = horizontalVelocity.y;
-        horizontalVelocity.y = 0;
-        horizontalForce -= (Vector3.ClampMagnitude(horizontalVelocity, 1f) * horizontalForce.magnitude) / Mathf.Clamp(stats.GetStat(Stat.Speed), 0.1f, Mathf.Infinity) * (100f * Time.deltaTime);
+        float speed = stats.GetStat(Stat.Speed);
+        Vector3 move = input.Movement;
+        move.z = move.y;
+        move.y = 0f;
+        move = transform.TransformDirection(move);
+        float baseMaxSpeed = speed * maxSpeed;
+        if (Sprinting)
+        {
+            baseMaxSpeed *= sprintMultiplier;
+        }
+        move = Vector3.ClampMagnitude(move, baseMaxSpeed) * (speed * Time.deltaTime);
         
-        rb.AddForce(horizontalForce, ForceMode.Force);
-        
-        Grounded = Physics.CheckSphere(transform.position - Vector3.down, 0.25f, LayerMask.GetMask("Ground"));
+        controller.Move(move);
         
         // Handle look movement
         Vector2 look = input.Look * sensitivity;
         Vector3 eulerAngles = head.localEulerAngles;
         eulerAngles.z = 0;
         eulerAngles.y = 0;
-        eulerAngles.x = Mathf.Clamp(eulerAngles.x - (look.y * Time.deltaTime * 30f), -89f, 89f);
-        transform.Rotate(Vector3.up, look.x * Time.deltaTime * 30f);
+        eulerAngles.x -= (look.y * Time.deltaTime * 35f);
+        transform.Rotate(Vector3.up, look.x * Time.deltaTime * 35f);
         head.localEulerAngles = eulerAngles;
+    }
+
+    public void OnJump()
+    {
+        if (controller.isGrounded)
+        {
+            Crouching = false;
+
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+        else if (jumpsRemaining > 0)
+        {
+            jumpsRemaining--;
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+
+    public void OnCrouch()
+    {
+        if (controller.isGrounded && !Crouching)
+        {
+            Crouching = true;
+        }
+    }
+
+    public void OnSprint()
+    {
+        Sprinting = true;
+    }
+
+    public void OnSprintRelease()
+    {
+        Sprinting = false;
+    }
+
+    public void OnUncrouch()
+    {
+        if (Crouching)
+        {
+            Crouching = false;
+        }
     }
     
     public static void GrabCursor()
