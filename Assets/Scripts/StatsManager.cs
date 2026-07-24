@@ -11,11 +11,25 @@ public class StatsManager : MonoBehaviour
 
     [SerializeField]
     private SerializedDictionary<Stat, float> BaseStats = new SerializedDictionary<Stat, float>();
+    
+    public delegate void StatModifierChanged(StatModifierChangedEventArgs args);
+    
+    public event StatModifierChanged OnStatModifierChanged;
 
     private void Start()
     {
         upgradesManager = GetComponent<UpgradesManager>();
         statusManager = GetComponent<StatusManager>();
+
+        if (upgradesManager != null)
+        {
+            upgradesManager.OnUpgradeModifierChanged += OnModifierChanged;
+        }
+
+        if (statusManager != null)
+        {
+            statusManager.OnStatusModifierChanged += OnModifierChanged;
+        }
         
         // Ensure we have no NullReferenceExceptions 
         foreach (Stat stat in Enum.GetValues(typeof(Stat)))
@@ -25,6 +39,11 @@ public class StatsManager : MonoBehaviour
                 BaseStats.Add(stat, 0);
             }
         }
+    }
+
+    private void OnModifierChanged(StatModifierChangedEventArgs args)
+    {
+        OnStatModifierChanged?.Invoke(args);
     }
 
     public float GetBaseStat(Stat stat)

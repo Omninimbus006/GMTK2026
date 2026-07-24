@@ -1,12 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class UpgradesManager : MonoBehaviour, IUpgradable
 {
-    public List<Upgrade> Upgrades { get; } = new List<Upgrade>();
+    public ObservableList<Upgrade> Upgrades { get; } = new ObservableList<Upgrade>();
+    
+    /// <inheritdoc />
+    public event IUpgradable.UpgradeModifierChanged OnUpgradeModifierChanged;
 
+    private void Start()
+    {
+        Upgrades.ItemAdded += OnUpgradesChanged;
+        Upgrades.ItemRemoved += OnUpgradesChanged;
+    }
+
+    private void OnUpgradesChanged(ObservableList<Upgrade> upgrades, ListChangedEventArgs<Upgrade> args)
+    {
+        List<Stat> invokedStats = new List<Stat>();
+        
+        foreach (StatModifier mod in args.item.Modifiers)
+        {
+            if (!invokedStats.Contains(mod.Stat))
+            {
+                OnUpgradeModifierChanged?.Invoke(new StatModifierChangedEventArgs(mod.Stat));
+                invokedStats.Add(mod.Stat);
+            }
+        }
+    }
+    
     /// <summary>
     /// Applies all upgrades for a given stat to the given number.
     /// </summary>

@@ -2,7 +2,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Types
 {
@@ -46,6 +48,15 @@ public enum Rarity
     Legendary,
 }
 
+[Flags]
+public enum DestroyOptions
+{
+    None = 0,
+    Effects = 1,
+    Disable = 2,
+    Destroy = 4,
+}
+
 public interface Collectible
 {
     /// <summary>
@@ -59,7 +70,7 @@ public interface IUpgradable
     /// <summary>
     /// List of all upgrades on the object.
     /// </summary>
-    public List<Upgrade> Upgrades { get; }
+    public ObservableList<Upgrade> Upgrades { get; }
     
     /// <summary>
     /// Tries to add an upgrade to the object.
@@ -74,6 +85,20 @@ public interface IUpgradable
     /// <param name="upgrade">The upgrade to remove.</param>
     /// <returns>True if the upgrade was removed. False if the upgrade was not found.</returns>
     public bool TryRemoveUpgrade(Upgrade upgrade);
+
+    public delegate void UpgradeModifierChanged(StatModifierChangedEventArgs args);
+
+    public event UpgradeModifierChanged OnUpgradeModifierChanged;
+}
+
+public class StatModifierChangedEventArgs : EventArgs
+{
+    public Stat Stat { get; }
+    
+    public StatModifierChangedEventArgs(Stat stat)
+    {
+        Stat = stat;
+    }
 }
 
 // Interface to allow modular use of upgrades
@@ -100,6 +125,143 @@ public interface Weapon : Collectible
     public void OnSecondaryFire();
 
     public void OnReload();
+}
+
+public interface IDamageable
+{
+    public float HP { get; }
+    
+    public float MaxHP { get; }
+    
+    /// <summary>
+    /// Damage the entity, if possible.
+    /// This is a backup method for when you don't have an AttackValues object.
+    /// </summary>
+    /// <param name="amount">The amount of damage to deal</param>
+    /// <param name="source">EffectSource of the attacker</param>
+    /// <param name="direct">Should this damage bypass resistance</param>
+    // ReSharper disable Unity.PerformanceAnalysis
+    public void Damage(float amount, EffectSource source, bool direct = false);
+
+    /// <summary>
+    /// Restores hitpoints to the object, if possible. Does not affect shields or armor.
+    /// </summary>
+    /// <param name="amount">How many hitpoints to restore.</param>
+    /// <param name="source">The source of the repair.</param>
+    public void Repair(float amount, EffectSource source);
+    
+    public delegate void DamageEventHandler(DamageEventArgs args);
+    public delegate void DamagedEventHandler(DamagedEventArgs args);
+    public delegate void RepairEventHandler(RepairEventArgs args);
+    public delegate void RepairedEventHandler(RepairedEventArgs args);
+    
+    public event DamageEventHandler OnDamage;
+    public event DamagedEventHandler OnDamaged;
+    public event RepairEventHandler OnRepair;
+    public event RepairedEventHandler OnRepaired;
+}
+
+public class DamageEventArgs : CancelEventArgs
+{
+    public float Amount { get; set; }
+    public EffectSource Source { get; }
+    public DamageEventArgs(float amount, EffectSource source)
+    {
+        Amount = amount;
+        Source = source;
+    }
+}
+
+public class DestroyEventArgs : CancelEventArgs
+{
+    public EffectSource Source { get; }
+    public DestroyEventArgs(EffectSource source)
+    {
+        Source = source;
+    }
+}
+
+public class RepairEventArgs : CancelEventArgs
+{
+    public float Amount { get; set; }
+    public EffectSource Source { get; }
+    public RepairEventArgs(float amount, EffectSource source)
+    {
+        Amount = amount;
+        Source = source;
+    }
+}
+
+public class DamagedEventArgs : EventArgs
+{
+    public float Amount { get; }
+    
+    public EffectSource Source { get; }
+    
+    public DamagedEventArgs(float amount, EffectSource source)
+    {
+        this.Amount = amount;
+        this.Source = source;
+    }
+}
+
+public class DestroyedEventArgs : EventArgs
+{
+    public EffectSource Source { get; }
+
+    public DestroyedEventArgs(EffectSource source)
+    {
+        this.Source = source;
+    }
+}
+
+public enum SourceType
+{
+    Player,
+    Entity,
+    Environment,
+    Special
+}
+
+public struct EffectSource
+{
+    /// <summary>
+    /// What type of source is causing the effect.
+    /// </summary>
+    public SourceType sourceType;
+    /// <summary>
+    /// The object that is causing the effect.
+    /// May be null if the source is not an object (e.g., environmental damage).
+    /// </summary>
+    public GameObject sourceObject;
+}
+
+public class RepairedEventArgs : EventArgs
+{
+    public float Amount { get; }
+
+    public EffectSource Source { get; }
+
+    public RepairedEventArgs(float amount, EffectSource source)
+    {
+        this.Amount = amount;
+        this.Source = source;
+    }
+}
+
+public interface IDestroyable
+{
+    /// <summary>
+    /// Destroys the entity, applying any necessary effects or cleanup.
+    /// </summary>
+    /// <param name="source">The source of the destruction.</param>
+    public void DestroyComponent(EffectSource source);
+    
+    public delegate void DestroyEventHandler(DestroyEventArgs args);
+    public delegate void DestroyedEventHandler(DestroyedEventArgs args);
+    
+    public event DestroyEventHandler OnDestroy;
+    public event DestroyedEventHandler OnDestroyed;
 }
 
 [Serializable]
@@ -377,26 +539,26 @@ public class StackableStatus : Status
 
 public interface Effect
 {
-    public List<StatModifier> Modifiers { get; }
+    public ObservableList<StatModifier> Modifiers { get; }
 }
 
 public class StatusEffect : Status, Effect
 {
-    public List<StatModifier> Modifiers { get; }
+    public ObservableList<StatModifier> Modifiers { get; }
     
     public StatusEffect(string name, float duration, List<StatModifier> modifiers, bool disableWhenPaused = true) : base(name, duration, disableWhenPaused)
     {
-        Modifiers = modifiers;
+        Modifiers = new ObservableList<StatModifier>(modifiers);
     }
 }
 
 public class StackableStatusEffect : StackableStatus, Effect
 {
-    public List<StatModifier> Modifiers { get; }
+    public ObservableList<StatModifier> Modifiers { get; }
     
     public StackableStatusEffect(string name, float duration, int stacks, int maxStacks, List<StatModifier> modifiers, ExpireStackAction expireAction, OverflowStackAction overflowAction, bool disableWhenPaused = true) : base(name, duration, stacks, maxStacks, expireAction, overflowAction, disableWhenPaused)
     {
-        Modifiers = modifiers;
+        Modifiers = new ObservableList<StatModifier>(modifiers);
     }
 }
 
@@ -405,7 +567,7 @@ public interface IStatusEffectable
     /// <summary>
     /// The list of statuses on the object.
     /// </summary>
-    public List<Status> Statuses { get; }
+    public ObservableList<Status> Statuses { get; }
 
     /// <summary>
     /// Adds a status to the object.
@@ -419,20 +581,8 @@ public interface IStatusEffectable
     /// <param name="status">The status to remove.</param>
     /// <returns>True if the status was removed. False if the status was not found.</returns>
     public bool TryRemoveStatus(Status status);
-}
 
-public interface IDamageable
-{
-    public float Health { get; }
-    public float MaxHealth { get; }
+    public delegate void StatusModifierChanged(StatModifierChangedEventArgs args);
     
-    public bool IsInvulnerable { get; }
-
-    public void Damage(float amount);
-    
-    public void Heal(float amount);
-
-    public void Kill();
-    
-    public void SetInvulnerable(bool invulnerable);
+    public event  StatusModifierChanged OnStatusModifierChanged;
 }

@@ -52,6 +52,10 @@ public class PlayerMovement : MonoBehaviour
     private int jumpsRemaining;
     
     public bool Crouching { get; private set; }
+
+    private float speed;
+
+    private int maxJumps;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -61,6 +65,7 @@ public class PlayerMovement : MonoBehaviour
         stats = GetComponent<StatsManager>();
         input = GetComponent<PlayerInput>();
         col = GetComponent<CapsuleCollider>();
+        stats.OnStatModifierChanged += OnStatChanged;
         col.material = normalPhysics;
         input.Jump += OnJump;
         input.Sprint += OnSprint;
@@ -69,7 +74,17 @@ public class PlayerMovement : MonoBehaviour
         input.CrouchRelease += OnUncrouch;
         head.GetComponentInChildren<Camera>().fieldOfView = PlayerPrefs.GetFloat("FOV", 40f);
         sensitivity = PlayerPrefs.GetFloat("Sensitivity", 1f);
-        jumpsRemaining = (int)stats.GetStat(Stat.Jumps);
+        maxJumps = (int)stats.GetStat(Stat.Jumps);
+        jumpsRemaining = maxJumps;
+        speed = stats.GetStat(Stat.Speed);
+    }
+
+    private void OnStatChanged(StatModifierChangedEventArgs args)
+    {
+        if (args.Stat == Stat.Speed)
+        {
+            speed = stats.GetStat(Stat.Speed);
+        }
     }
 
     // Update is called once per frame
@@ -78,7 +93,6 @@ public class PlayerMovement : MonoBehaviour
         // Handle horizontal movement
         if (!Crouching)
         {
-            float speed = stats.GetStat(Stat.Speed);
             Vector3 wishDir = rb.transform.TransformDirection(new Vector3(input.Movement.x, 0, input.Movement.y));
             Vector3 velocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         
