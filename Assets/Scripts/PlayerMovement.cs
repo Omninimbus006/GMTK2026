@@ -1,6 +1,7 @@
 using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(StatsManager))]
@@ -16,16 +17,31 @@ public class PlayerMovement : MonoBehaviour
     private float sensitivity;
 
     [SerializeField]
-    private float maxSpeed = 3f;
+    private float maxSpeed = 5f;
     
     [SerializeField]
-    private float sprintMultiplier = 1.75f;
+    private float sprintMultiplier = 2f;
 
     [SerializeField]
     private float jumpForce = 5f;
     
     [SerializeField]
-    private float acceleration = 3f;
+    private float acceleration = 0.2f;
+
+    [SerializeField]
+    private float airAcceleration = 0.08f;
+
+    [SerializeField]
+    private float normalDrag = 0.1f;
+    
+    [SerializeField]
+    private float slidingDrag = 0.01f;
+
+    [SerializeField]
+    private PhysicsMaterial normalPhysics;
+
+    [SerializeField]
+    private PhysicsMaterial slidingPhysics;
     
     public Transform head;
     
@@ -45,9 +61,10 @@ public class PlayerMovement : MonoBehaviour
         stats = GetComponent<StatsManager>();
         input = GetComponent<PlayerInput>();
         col = GetComponent<CapsuleCollider>();
+        col.material = normalPhysics;
         input.Jump += OnJump;
         input.Sprint += OnSprint;
-        input.Sprint += OnSprintRelease;
+        input.SprintRelease += OnSprintRelease;
         input.Crouch += OnCrouch;
         input.CrouchRelease += OnUncrouch;
         head.GetComponentInChildren<Camera>().fieldOfView = PlayerPrefs.GetFloat("FOV", 40f);
@@ -59,27 +76,30 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         // Handle horizontal movement
-        float speed = stats.GetStat(Stat.Speed);
-        Vector3 wishDir = rb.transform.TransformDirection(new Vector3(input.Movement.x, 0, input.Movement.y));
-        Vector3 velocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.y);
-        
-        float baseMaxSpeed = maxSpeed * speed;
-        if (Sprinting)
+        if (!Crouching)
         {
-            baseMaxSpeed *= sprintMultiplier;
+            float speed = stats.GetStat(Stat.Speed);
+            Vector3 wishDir = rb.transform.TransformDirection(new Vector3(input.Movement.x, 0, input.Movement.y));
+            Vector3 velocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        
+            float baseMaxSpeed = maxSpeed * speed;
+            if (Sprinting)
+            {
+                baseMaxSpeed *= sprintMultiplier;
+            }
+        
+            wishDir = wishDir.normalized;
+            Vector3 direction = wishDir * baseMaxSpeed - velocity;
+            float newAcceleration = Grounded ? acceleration : airAcceleration;
+            newAcceleration *= direction.magnitude * 2f;
+        
+            direction = direction.normalized * (wishDir == Vector3.zero ? newAcceleration * 2 : newAcceleration);
+            float magn = direction.magnitude;
+            direction = direction.normalized;
+            direction *= magn;
+        
+            rb.AddForce(direction, ForceMode.Acceleration);   
         }
-        
-        wishDir = wishDir.normalized;
-        Vector3 direction = wishDir * baseMaxSpeed - velocity;
-        float newAcceleration = acceleration;
-        newAcceleration *= direction.magnitude * 2f;
-        
-        direction = direction.normalized * (wishDir == Vector3.zero ? newAcceleration * 2 : newAcceleration);
-        float magn = direction.magnitude;
-        direction = direction.normalized;
-        direction *= magn;
-        
-        rb.AddForce(direction, ForceMode.Acceleration);
         
         if (!Grounded)
         {
@@ -87,6 +107,11 @@ public class PlayerMovement : MonoBehaviour
             if (Grounded)
             {
                 jumpsRemaining = (int)stats.GetStat(Stat.Jumps);
+
+                if (Crouching)
+                {
+                    rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
+                }
             }
         }
         else
@@ -111,16 +136,10 @@ public class PlayerMovement : MonoBehaviour
     
     public void OnJump()
     {
-        if (Grounded)
+        if (Grounded || jumpsRemaining > 0)
         {
-            Crouching = false;
             jumpsRemaining--;
             
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
-        else if (jumpsRemaining > 0)
-        {
-            jumpsRemaining--;
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
@@ -129,6 +148,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Grounded && !Crouching)
         {
+            col.material = slidingPhysics;
+            rb.linearDamping = slidingDrag;
             Crouching = true;
         }
     }
@@ -147,6 +168,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Crouching)
         {
+            col.material = normalPhysics;
+            rb.linearDamping = normalDrag;
             Crouching = false;
         }
     }
