@@ -1,35 +1,53 @@
 using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(StatsManager))]
 [RequireComponent(typeof(PlayerInput))]
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class PlayerMovement : MonoBehaviour
 {
     private StatsManager stats;
     private Rigidbody rb;
     private PlayerInput input;
-    private CharacterController controller;
+    private CapsuleCollider col;
 
     private float sensitivity;
 
     [SerializeField]
-    private float maxSpeed = 3f;
+    private float maxSpeed = 5f;
     
     [SerializeField]
-    private float sprintMultiplier = 1.75f;
-    
-    [SerializeField]
-    private float acceleration = 5f;
+    private float sprintMultiplier = 2f;
 
     [SerializeField]
     private float jumpForce = 5f;
     
+    [SerializeField]
+    private float acceleration = 0.2f;
+
+    [SerializeField]
+    private float airAcceleration = 0.08f;
+
+    [SerializeField]
+    private float normalDrag = 0.1f;
+    
+    [SerializeField]
+    private float slidingDrag = 0.01f;
+
+    [SerializeField]
+    private PhysicsMaterial normalPhysics;
+
+    [SerializeField]
+    private PhysicsMaterial slidingPhysics;
+    
     public Transform head;
     
     public bool Sprinting { get; private set; }
+    
+    public bool Grounded { get; private set; }
 
     private int jumpsRemaining;
     
@@ -42,10 +60,11 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         stats = GetComponent<StatsManager>();
         input = GetComponent<PlayerInput>();
-        controller = GetComponent<CharacterController>();
+        col = GetComponent<CapsuleCollider>();
+        col.material = normalPhysics;
         input.Jump += OnJump;
         input.Sprint += OnSprint;
-        input.Sprint += OnSprintRelease;
+        input.SprintRelease += OnSprintRelease;
         input.Crouch += OnCrouch;
         input.CrouchRelease += OnUncrouch;
         head.GetComponentInChildren<Camera>().fieldOfView = PlayerPrefs.GetFloat("FOV", 40f);
@@ -57,19 +76,48 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         // Handle horizontal movement
-        float speed = stats.GetStat(Stat.Speed);
-        Vector3 move = input.Movement;
-        move.z = move.y;
-        move.y = 0f;
-        move = transform.TransformDirection(move);
-        float baseMaxSpeed = speed * maxSpeed;
-        if (Sprinting)
+        if (!Crouching)
         {
-            baseMaxSpeed *= sprintMultiplier;
-        }
-        move = Vector3.ClampMagnitude(move, baseMaxSpeed) * (speed * Time.deltaTime);
+            float speed = stats.GetStat(Stat.Speed);
+            Vector3 wishDir = rb.transform.TransformDirection(new Vector3(input.Movement.x, 0, input.Movement.y));
+            Vector3 velocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         
-        controller.Move(move);
+            float baseMaxSpeed = maxSpeed * speed;
+            if (Sprinting)
+            {
+                baseMaxSpeed *= sprintMultiplier;
+            }
+        
+            wishDir = wishDir.normalized;
+            Vector3 direction = wishDir * baseMaxSpeed - velocity;
+            float newAcceleration = Grounded ? acceleration : airAcceleration;
+            newAcceleration *= direction.magnitude * 2f;
+        
+            direction = direction.normalized * (wishDir == Vector3.zero ? newAcceleration * 2 : newAcceleration);
+            float magn = direction.magnitude;
+            direction = direction.normalized;
+            direction *= magn;
+        
+            rb.AddForce(direction, ForceMode.Acceleration);   
+        }
+        
+        if (!Grounded)
+        {
+            Grounded = Physics.CheckSphere(transform.position + Vector3.down * 0.5f, 0.3f, LayerMask.GetMask("Ground"));
+            if (Grounded)
+            {
+                jumpsRemaining = (int)stats.GetStat(Stat.Jumps);
+
+                if (Crouching)
+                {
+                    rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
+                }
+            }
+        }
+        else
+        {
+            Grounded = Physics.CheckSphere(transform.position + Vector3.down * 0.5f, 0.3f, LayerMask.GetMask("Ground"));
+        }
         
         // Handle look movement
         Vector2 look = input.Look * sensitivity;
@@ -81,25 +129,27 @@ public class PlayerMovement : MonoBehaviour
         head.localEulerAngles = eulerAngles;
     }
 
+    private void FixedUpdate()
+    {
+        col.height = Crouching ? Mathf.Max(0.6f, col.height - Time.fixedDeltaTime * 10f) : Mathf.Min(1.54f, col.height + Time.fixedDeltaTime * 10f);
+    }
+    
     public void OnJump()
     {
-        if (controller.isGrounded)
-        {
-            Crouching = false;
-
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
-        else if (jumpsRemaining > 0)
+        if (Grounded || jumpsRemaining > 0)
         {
             jumpsRemaining--;
+            
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 
     public void OnCrouch()
     {
-        if (controller.isGrounded && !Crouching)
+        if (Grounded && !Crouching)
         {
+            col.material = slidingPhysics;
+            rb.linearDamping = slidingDrag;
             Crouching = true;
         }
     }
@@ -118,6 +168,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Crouching)
         {
+            col.material = normalPhysics;
+            rb.linearDamping = normalDrag;
             Crouching = false;
         }
     }
