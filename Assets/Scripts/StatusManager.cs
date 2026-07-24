@@ -2,10 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class StatusManager : MonoBehaviour, IStatusEffectable
 {
-    public List<Status> Statuses { get; } = new List<Status>();
+    public ObservableList<Status> Statuses { get; } = new ObservableList<Status>();
+    
+    /// <inheritdoc />
+    public event IStatusEffectable.StatusModifierChanged OnStatusModifierChanged;
+
+    private void OnStatusesChanged(ObservableList<Status> statuses, ListChangedEventArgs<Status> args)
+    {
+        List<Stat> invokedStats = new List<Stat>();
+        
+        if (args.item is Effect effect)
+        {
+            foreach (StatModifier mod in effect.Modifiers)
+            {
+                if (!invokedStats.Contains(mod.Stat))
+                {
+                    OnStatusModifierChanged?.Invoke(new StatModifierChangedEventArgs(mod.Stat));
+                    invokedStats.Add(mod.Stat);
+                }
+            }
+        }
+    }
+
+    private void Start()
+    {
+        Statuses.ItemAdded += OnStatusesChanged;
+        Statuses.ItemRemoved += OnStatusesChanged;
+    }
     
     private void Update()
     {
